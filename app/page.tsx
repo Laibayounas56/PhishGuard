@@ -8,6 +8,8 @@ interface Breakdown {
   structure: { score: number; flags: string[] };
   domainAge: { score: number; ageMonths: number | null; error?: string };
   blacklist: { score: number; blacklisted: boolean; source: string; error?: string };
+  virusTotal: { score: number; malicious: number; total: number; error?: string };
+  visualSimilarity: { score: number; matchedBrand: string | null; attackType: string | null; error?: string; };
 }
 
 interface AnalysisResult {
@@ -17,6 +19,7 @@ interface AnalysisResult {
   analyzedAt: string;
   breakdown: Breakdown;
 }
+
 
 const STATUS_CONFIG = {
   Safe: { symbol: "OK", badgeClass: "badge-safe", fillClass: "score-fill-safe", label: "Safe", tone: "#34d399" },
@@ -92,7 +95,7 @@ export default function Home() {
       {loading && (
         <section className="panel result-panel" aria-live="polite">
           <div className="spinner" />
-          <p className="muted">Scanning URL structure, domain age, and blacklist sources.</p>
+          <p className="muted">Scanning URL structure, domain age, blacklist sources, VirusTotal engines, and brand impersonation.</p>
         </section>
       )}
 
@@ -156,6 +159,28 @@ export default function Home() {
                   : result.breakdown.blacklist.error
                     ? `${result.breakdown.blacklist.error} | Source: ${result.breakdown.blacklist.source}`
                     : `No listing found | Source: ${result.breakdown.blacklist.source}`
+              }
+            />
+            <BreakdownRow
+            label="VirusTotal Scan"
+            score={result.breakdown.virusTotal.score}
+            detail={
+              result.breakdown.virusTotal.error
+                ? `Skipped: ${result.breakdown.virusTotal.error}`
+                : result.breakdown.virusTotal.malicious > 0
+                  ? `Flagged by ${result.breakdown.virusTotal.malicious}/${result.breakdown.virusTotal.total} antivirus engines`
+                  : `Clean — 0/${result.breakdown.virusTotal.total} engines flagged`
+              }
+            />
+            <BreakdownRow
+              label="Brand Impersonation" 
+              score={result.breakdown.visualSimilarity.score}
+              detail={
+                result.breakdown.visualSimilarity.error
+                  ? `Skipped: ${result.breakdown.visualSimilarity.error}`
+                  : result.breakdown.visualSimilarity.matchedBrand
+                    ? `${result.breakdown.visualSimilarity.attackType} — impersonates ${result.breakdown.visualSimilarity.matchedBrand}`
+                    : "No brand impersonation detected"
               }
             />
           </div>
