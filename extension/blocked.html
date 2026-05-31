@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PhishGuard - Site Blocked</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background:
+        linear-gradient(135deg, rgba(20, 8, 12, .96), rgba(38, 13, 18, .98)),
+        radial-gradient(circle at 50% 0%, rgba(239,68,68,.16), transparent 36%);
+      color: #e5edf7;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .card {
+      width: min(620px, 100%);
+      padding: 34px;
+      border: 1px solid rgba(239,68,68,.32);
+      border-radius: 8px;
+      background: rgba(42, 13, 18, .88);
+      box-shadow: 0 22px 80px rgba(0, 0, 0, .32);
+      text-align: center;
+    }
+    .mark {
+      display: inline-grid;
+      width: 58px;
+      height: 58px;
+      margin-bottom: 16px;
+      place-items: center;
+      border: 1px solid rgba(239,68,68,.52);
+      border-radius: 8px;
+      color: #ffb4b4;
+      font-weight: 900;
+    }
+    .badge {
+      display: inline-block;
+      margin-bottom: 14px;
+      border: 1px solid rgba(239,68,68,.42);
+      border-radius: 999px;
+      background: rgba(239,68,68,.14);
+      color: #ff8a8a;
+      font-size: .88rem;
+      font-weight: 800;
+      padding: 7px 14px;
+    }
+    h1 {
+      margin-bottom: 10px;
+      color: #ff8a8a;
+      font-size: 2.1rem;
+      line-height: 1.1;
+    }
+    .subtitle {
+      max-width: 500px;
+      margin: 0 auto 22px;
+      color: #b8c7d9;
+      line-height: 1.55;
+    }
+    .score-box,
+    .url-box {
+      margin-bottom: 18px;
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 8px;
+      background: rgba(255,255,255,.045);
+      padding: 16px;
+      text-align: left;
+    }
+    .score-label {
+      margin-bottom: 6px;
+      color: #8ba0b8;
+      font-size: .78rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+    .score-value {
+      color: #ff8a8a;
+      font-size: 2.4rem;
+      font-weight: 900;
+      line-height: 1;
+    }
+    .score-sub {
+      margin-top: 6px;
+      color: #8ba0b8;
+      font-size: .86rem;
+    }
+    .url-box {
+      color: #b8c7d9;
+      font-size: .9rem;
+      line-height: 1.45;
+      word-break: break-all;
+    }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+    }
+    button,
+    a {
+      border-radius: 8px;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 800;
+      padding: 12px 18px;
+      text-decoration: none;
+    }
+    button {
+      border: 0;
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: #fff;
+    }
+    a {
+      border: 1px solid rgba(125,178,255,.32);
+      background: transparent;
+      color: #93c5fd;
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="mark" aria-hidden="true">PG</div>
+    <div class="badge">BLOCKED</div>
+    <h1>Dangerous Site Blocked</h1>
+    <p class="subtitle">PhishGuard classified this URL as a likely phishing threat and stopped navigation to protect you.</p>
+
+    <div class="score-box">
+      <div class="score-label">Threat score</div>
+      <div class="score-value" id="score-value">--</div>
+      <div class="score-sub">Scores of 70 and above are blocked automatically.</div>
+    </div>
+
+    <div class="url-box" id="blocked-url">Loading...</div>
+
+    <div class="actions">
+      <button id="back-button" type="button">Go Back to Safety</button>
+      <a href="http://localhost:3000" target="_blank" rel="noreferrer">Check Another URL</a>
+    </div>
+  </main>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const url = params.get("url") || "Unknown URL";
+    const score = params.get("score") || "--";
+
+    document.getElementById("blocked-url").textContent = url;
+    document.getElementById("score-value").textContent = score === "--" ? score : `${score}/100`;
+    document.getElementById("back-button").addEventListener("click", () => history.back());
+  </script>
+</body>
+</html>
