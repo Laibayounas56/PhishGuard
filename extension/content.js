@@ -112,35 +112,4 @@
       injectPopup({ status: "Suspicious", score: msg.score });
     }
   });
-
-  // ── Extension Audit Bridge ──────────────────────────────────────────────────
-  // Listen for requests from the Next.js dashboard page and relay to background.
-  function requestAudit() {
-    chrome.runtime.sendMessage({ type: "GET_EXTENSIONS_AUDIT" }, (response) => {
-      if (chrome.runtime.lastError || !response?.success) return;
-      window.postMessage(
-        { source: "PHISHGUARD_EXT", type: "PHISHGUARD_EXTENSIONS_REPORT", report: response.report },
-        "*"
-      );
-    });
-  }
-
-  window.addEventListener("message", (event) => {
-    if (event.source !== window || !event.data?.source) return;
-    const { type } = event.data;
-
-    if (type === "PHISHGUARD_PING") {
-      // Announce presence and immediately send a fresh audit
-      window.postMessage({ source: "PHISHGUARD_EXT", type: "PHISHGUARD_PONG" }, "*");
-      requestAudit();
-    }
-
-    if (type === "TRIGGER_EXTENSIONS_SCAN") {
-      requestAudit();
-    }
-  });
-
-  // Auto-announce on load so the dashboard can detect the extension
-  window.postMessage({ source: "PHISHGUARD_EXT", type: "PHISHGUARD_PONG" }, "*");
-  requestAudit();
 })();

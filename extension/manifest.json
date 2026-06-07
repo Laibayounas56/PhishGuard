@@ -7,8 +7,7 @@
     "webNavigation",
     "tabs",
     "storage",
-    "scripting",
-    "management"
+    "scripting"
   ],
   "host_permissions": [
     "<all_urls>"
@@ -38,7 +37,7 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["blocked.html", "blacklist.json"],
+      "resources": ["blocked.html"],
       "matches": ["<all_urls>"]
     }
   ]
