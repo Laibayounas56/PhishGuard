@@ -1,18 +1,31 @@
-const STATUS_CONFIG = {
-  Safe:       { badgeClass: "badge-safe",        fillClass: "fill-safe",        scoreClass: "safe",        symbol: "✓" },
-  Suspicious: { badgeClass: "badge-suspicious",   fillClass: "fill-suspicious",   scoreClass: "suspicious",   symbol: "!" },
-  Blocked:    { badgeClass: "badge-blocked",      fillClass: "fill-blocked",      scoreClass: "blocked",      symbol: "✕" },
-};
-
 const DEFAULT_API_URL = "http://localhost:3000/api/analyze";
 
-const BREAKDOWN_META = [
-  { key: "structure",        icon: "🔗", label: "URL Structure" },
-  { key: "domainAge",        icon: "📅", label: "Domain Age" },
-  { key: "blacklist",        icon: "🛡️", label: "Blacklist" },
-  { key: "virusTotal",       icon: "🦠", label: "VirusTotal" },
-  { key: "visualSimilarity", icon: "👁️", label: "Brand Impersonation" },
-];
+const STATUS_CONFIG = {
+  Safe: {
+    badgeClass: "badge-safe",
+    scoreClass: "safe",
+    barClass:   "bar-safe",
+    msgClass:   "msg-safe",
+    symbol:     "✓",
+    message:    "This page appears safe. No threats detected.",
+  },
+  Suspicious: {
+    badgeClass: "badge-suspicious",
+    scoreClass: "suspicious",
+    barClass:   "bar-suspicious",
+    msgClass:   "msg-suspicious",
+    symbol:     "!",
+    message:    "This page looks suspicious. Proceed with caution.",
+  },
+  Blocked: {
+    badgeClass: "badge-blocked",
+    scoreClass: "blocked",
+    barClass:   "bar-blocked",
+    msgClass:   "msg-blocked",
+    symbol:     "✕",
+    message:    "Dangerous page detected! Avoid entering any information.",
+  },
+};
 
 function timeAgo(ts) {
   const diff = Math.max(0, Math.floor((Date.now() - ts) / 1000));
@@ -21,139 +34,159 @@ function timeAgo(ts) {
   return `${Math.floor(diff / 3600)}h ago`;
 }
 
-function el(tag, className, text) {
+function el(tag, cls, text) {
   const e = document.createElement(tag);
-  if (className) e.className = className;
+  if (cls)  e.className = cls;
   if (text !== undefined) e.textContent = text;
   return e;
 }
 
-/** Returns a human-readable detail string for each breakdown section */
-function breakdownDetail(key, data) {
-  if (!data) return "No data";
-  switch (key) {
-    case "structure":
-      return data.flags && data.flags.length
-        ? data.flags.join(" · ")
-        : "No suspicious patterns";
-    case "domainAge":
-      if (data.error) return `Skipped: ${data.error}`;
-      if (data.ageMonths !== null && data.ageMonths !== undefined)
-        return `Domain is ${data.ageMonths} months old`;
-      return "Age unavailable";
-    case "blacklist":
-      if (data.blacklisted) return `Listed by ${data.source}`;
-      if (data.error)       return `${data.error} · ${data.source}`;
-      return `Clean · ${data.source}`;
-    case "virusTotal":
-      if (data.error) return `Skipped: ${data.error}`;
-      if (data.malicious > 0) return `Flagged by ${data.malicious}/${data.total} engines`;
-      return `Clean — 0/${data.total} engines`;
-    case "visualSimilarity":
-      if (data.error)          return `Skipped: ${data.error}`;
-      if (data.matchedBrand)   return `${data.attackType} — impersonates ${data.matchedBrand}`;
-      return "No brand impersonation";
-    default:
-      return "";
-  }
-}
-
-/** Returns chip class based on score */
-function chipClass(score) {
-  if (score === 0)  return "bd-chip chip-safe";
-  if (score < 25)   return "bd-chip chip-warn";
-  return "bd-chip chip-danger";
-}
-
-chrome.storage.session.get("lastResult", ({ lastResult }) => {
-  if (!lastResult) return;
-
-  const cfg = STATUS_CONFIG[lastResult.status];
-  if (!cfg) return;
-
+function showLoading(url) {
   const content = document.getElementById("content");
-  content.textContent = "";
+  content.innerHTML = "";
+  const wrap = el("div", "loading-wrap");
+  wrap.appendChild(el("div", "spinner"));
+  wrap.appendChild(el("div", "loading-label", "Scanning…"));
+  if (url) wrap.appendChild(el("div", "loading-url", url));
+  content.appendChild(wrap);
+}
 
-  /* ── Result Card ── */
-  const card = el("div", "result-card");
+function showSystemPage() {
+  const content = document.getElementById("content");
+  content.innerHTML = "";
+  const wrap = el("div", "no-data");
+  wrap.appendChild(el("span", "no-data-icon", "🛡️"));
+  wrap.appendChild(el("div", "no-data-title", "PhishGuard Active"));
+  wrap.appendChild(el("div", "no-data-sub", "Navigate to any website and PhishGuard will automatically protect you."));
+  content.appendChild(wrap);
+}
 
-  const top = el("div", "result-top");
-  top.appendChild(el("span", `badge ${cfg.badgeClass}`, `${cfg.symbol} ${lastResult.status}`));
-  top.appendChild(el("span", `score-num ${cfg.scoreClass}`, `${lastResult.score}/100`));
-  card.appendChild(top);
+function showError(msg) {
+  const content = document.getElementById("content");
+  content.innerHTML = "";
+  content.appendChild(el("div", "error-msg", msg));
+}
 
-  const track = el("div", "score-track");
-  const fill  = el("div", `score-fill ${cfg.fillClass}`);
+function renderResult(score, status, url, timestamp) {
+  const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.Safe;
+  const content = document.getElementById("content");
+  content.innerHTML = "";
+
+  const card = el("div", "score-card");
+
+  // Big score number
+  card.appendChild(el("div", `big-score ${cfg.scoreClass}`, `${score}`));
+  card.appendChild(el("div", "score-label", "THREAT SCORE"));
+
+  // Status badge
+  card.appendChild(el("span", `badge ${cfg.badgeClass}`, `${cfg.symbol} ${status}`));
+
+  // Score bar
+  const track = el("div", "bar-track");
+  const fill  = el("div", `bar-fill ${cfg.barClass}`);
   fill.style.width = "0%";
   track.appendChild(fill);
   card.appendChild(track);
 
-  const bottom = el("div", "result-bottom");
-  bottom.appendChild(el("div", "url-text", lastResult.url));
-  bottom.appendChild(el("div", "time-text", `Scanned ${timeAgo(lastResult.timestamp)}`));
-  card.appendChild(bottom);
+  // Status message
+  card.appendChild(el("div", `status-msg ${cfg.msgClass}`, cfg.message));
+
+  // URL + time
+  const meta = el("div", "meta");
+  meta.appendChild(el("div", "url-text", url));
+  if (timestamp) {
+    meta.appendChild(el("div", "time-text", `Scanned ${timeAgo(timestamp)}`));
+  }
+  card.appendChild(meta);
 
   content.appendChild(card);
 
-  /* ── Breakdown Section ── */
-  const bd = lastResult.breakdown;
-  if (bd) {
-    const section = el("div", "breakdown-section");
+  // Animate bar after paint
+  requestAnimationFrame(() => {
+    fill.style.width = `${Math.min(100, Math.max(0, score))}%`;
+  });
+}
 
-    // Heading
-    const heading = el("div", "breakdown-heading");
-    heading.appendChild(el("span", null, "Detection Breakdown"));
-    heading.appendChild(el("div", "hline"));
-    section.appendChild(heading);
+/* ── Main ── */
+async function init() {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const currentUrl = tab?.url;
 
-    // One row per engine
-    for (const { key, icon, label } of BREAKDOWN_META) {
-      const data  = bd[key];
-      const score = data?.score ?? 0;
-      const detail = breakdownDetail(key, data);
-      const chipLabel = score === 0 ? "Clean" : `+${score}`;
+  const isSystemPage = !currentUrl ||
+    currentUrl.startsWith("chrome://") ||
+    currentUrl.startsWith("chrome-extension://") ||
+    currentUrl.startsWith("about:") ||
+    currentUrl.startsWith("edge://") ||
+    currentUrl.startsWith("data:") ||
+    currentUrl.startsWith("file:");
 
-      const row = el("div", "bd-row");
-
-      const iconEl = el("div", "bd-icon", icon);
-      row.appendChild(iconEl);
-
-      const text = el("div", "bd-text");
-      text.appendChild(el("div", "bd-label", label));
-      const detailEl = el("div", "bd-detail");
-      detailEl.textContent = detail;
-      detailEl.title = detail;
-      text.appendChild(detailEl);
-      row.appendChild(text);
-
-      row.appendChild(el("span", chipClass(score), chipLabel));
-      section.appendChild(row);
-    }
-
-    content.appendChild(section);
+  if (isSystemPage) {
+    showSystemPage();
+    return;
   }
 
-  /* Animate score bar */
-  requestAnimationFrame(() => {
-    fill.style.width = `${Math.min(100, Math.max(0, lastResult.score))}%`;
-  });
-});
+  // Check session cache — reuse result if < 5 minutes old for same URL
+  const { lastResult } = await chrome.storage.session.get("lastResult");
+  const isFresh = lastResult &&
+                  lastResult.url === currentUrl &&
+                  (Date.now() - lastResult.timestamp) < 5 * 60 * 1000;
 
-/* Load saved API URL */
+  if (isFresh) {
+    renderResult(lastResult.score, lastResult.status, lastResult.url, lastResult.timestamp);
+    return;
+  }
+
+  // Need a fresh scan
+  showLoading(currentUrl);
+
+  try {
+    const { apiUrl } = await chrome.storage.local.get({ apiUrl: DEFAULT_API_URL });
+    const res = await fetch(apiUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: currentUrl }),
+    });
+
+    if (!res.ok) {
+      showError(`Backend returned ${res.status}. Is the server running?`);
+      return;
+    }
+
+    const data = await res.json();
+
+    // Cache result
+    await chrome.storage.session.set({
+      lastResult: {
+        url:       currentUrl,
+        score:     data.score,
+        status:    data.status,
+        timestamp: Date.now(),
+        breakdown: data.breakdown ?? null,
+        virusTotal: data.virusTotal ?? null,
+      },
+    });
+
+    renderResult(data.score, data.status, currentUrl, Date.now());
+  } catch {
+    showError("Cannot reach backend. Make sure the server is running on localhost:3000.");
+  }
+}
+
+init();
+
+/* ── Settings ── */
 chrome.storage.local.get({ apiUrl: DEFAULT_API_URL }, ({ apiUrl }) => {
   const input = document.getElementById("api-url");
   if (input) input.value = apiUrl;
 });
 
-/* Save API URL */
 document.getElementById("save-api-url").addEventListener("click", async () => {
   const input = document.getElementById("api-url");
   const state = document.getElementById("save-state");
   const value = input.value.trim();
-
   try {
     const parsed = new URL(value);
-    if (!["http:", "https:"].includes(parsed.protocol)) throw new Error("Invalid protocol");
+    if (!["http:", "https:"].includes(parsed.protocol)) throw new Error();
     await chrome.storage.local.set({ apiUrl: value });
     state.textContent = "✓ Saved";
     state.className = "save-state";

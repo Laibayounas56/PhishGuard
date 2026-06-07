@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>PhishGuard</title>
   <style>
     @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap");
@@ -10,230 +9,176 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      width: 380px;
+      width: 320px;
       background: #020b18;
       color: #e8f1fc;
-      font-family: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+      font-family: "Inter", system-ui, sans-serif;
       -webkit-font-smoothing: antialiased;
     }
 
     /* ── Header ── */
     .header {
-      display: flex;
-      align-items: center;
-      gap: 11px;
-      padding: 14px 16px 13px;
+      display: flex; align-items: center; gap: 10px;
+      padding: 13px 16px 12px;
       border-bottom: 1px solid rgba(99,179,237,0.1);
-      background: rgba(4,15,30,0.9);
-      position: sticky;
-      top: 0;
-      z-index: 10;
+      background: rgba(4,15,30,0.95);
     }
     .header-icon {
-      display: grid;
-      width: 34px;
-      height: 34px;
-      place-items: center;
-      border: 1.5px solid rgba(6,182,212,0.45);
-      border-radius: 8px;
-      background: linear-gradient(135deg, rgba(59,130,246,0.25), rgba(6,182,212,0.18));
-      color: #d7f8ff;
-      font-weight: 900;
-      font-size: 0.72rem;
-      box-shadow: 0 0 14px rgba(6,182,212,0.14);
+      width: 32px; height: 32px; border-radius: 8px;
+      display: grid; place-items: center;
+      border: 1.5px solid rgba(6,182,212,0.4);
+      background: linear-gradient(135deg, rgba(59,130,246,0.3), rgba(6,182,212,0.2));
+      font-weight: 900; font-size: 0.68rem; color: #dff6ff;
+      box-shadow: 0 0 12px rgba(6,182,212,0.15);
     }
-    .header-info { flex: 1; }
     .header-title {
-      font-weight: 800;
-      font-size: 0.97rem;
-      letter-spacing: -0.3px;
+      font-weight: 800; font-size: 0.95rem;
       background: linear-gradient(135deg, #e8f1fc, #93c5fd);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
       background-clip: text;
     }
-    .header-sub { color: #6b8aaa; font-size: 0.68rem; font-weight: 500; margin-top: 1px; }
-    .status-dot {
-      width: 8px; height: 8px; border-radius: 50%;
+    .dot {
+      margin-left: auto; width: 8px; height: 8px; border-radius: 50%;
       background: #10b981; box-shadow: 0 0 8px rgba(16,185,129,0.5);
-      animation: statusPulse 2.5s ease infinite;
+      animation: pulse 2.5s ease infinite;
     }
-    @keyframes statusPulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
 
     /* ── Body ── */
-    .body { padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+    .body { padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
 
-    /* ── No data ── */
-    .no-data { padding: 28px 16px; text-align: center; }
-    .no-data-icon { font-size: 2.2rem; margin-bottom: 10px; display: block; }
-    .no-data-title { font-weight: 700; font-size: 0.9rem; color: #9bb5d0; margin-bottom: 5px; }
-    .no-data-sub { color: #6b8aaa; font-size: 0.78rem; line-height: 1.5; }
+    /* ── Loading ── */
+    .loading-wrap {
+      padding: 30px 0; display: flex; flex-direction: column;
+      align-items: center; gap: 12px;
+    }
+    .spinner {
+      width: 38px; height: 38px; border-radius: 50%;
+      border: 3px solid rgba(99,179,237,0.12);
+      border-top-color: #06b6d4;
+      animation: spin 0.75s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-label { font-weight: 700; font-size: 0.85rem; color: #93c5fd; }
+    .loading-url   { font-size: 0.67rem; color: #4a637c; word-break: break-all; text-align: center; max-width: 260px; }
 
-    /* ── Result Card ── */
-    .result-card {
-      border-radius: 10px;
-      border: 1px solid rgba(99,179,237,0.12);
-      background: rgba(6,18,36,0.8);
+    /* ── Score card ── */
+    .score-card {
+      border-radius: 14px;
+      border: 1px solid rgba(99,179,237,0.1);
+      background: rgba(6,18,36,0.9);
       overflow: hidden;
+      padding: 20px 18px 16px;
+      display: flex; flex-direction: column; align-items: center; gap: 12px;
     }
-    .result-top {
-      padding: 12px 14px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
+
+    .big-score {
+      font-size: 3.2rem; font-weight: 900; letter-spacing: -2px; line-height: 1;
     }
+    .big-score.safe       { color: #34d399; text-shadow: 0 0 30px rgba(52,211,153,0.35); }
+    .big-score.suspicious { color: #fbbf24; text-shadow: 0 0 30px rgba(251,191,36,0.35); }
+    .big-score.blocked    { color: #f87171; text-shadow: 0 0 30px rgba(248,113,113,0.35); }
+
+    .score-label { font-size: 0.72rem; color: #4a637c; font-weight: 600; margin-top: -8px; }
+
     .badge {
       display: inline-flex; align-items: center; gap: 6px;
-      border-radius: 999px; padding: 5px 11px;
-      font-size: 0.74rem; font-weight: 800; letter-spacing: 0.02em;
+      border-radius: 999px; padding: 6px 16px;
+      font-size: 0.82rem; font-weight: 800; letter-spacing: 0.02em;
     }
-    .badge-safe      { border: 1.5px solid rgba(16,185,129,0.4);  background: rgba(16,185,129,0.12);  color: #4ade80; }
-    .badge-suspicious{ border: 1.5px solid rgba(245,158,11,0.4);  background: rgba(245,158,11,0.12);  color: #fbbf24; }
-    .badge-blocked   { border: 1.5px solid rgba(239,68,68,0.4);   background: rgba(239,68,68,0.12);   color: #f87171; }
-    .score-num { font-size: 1rem; font-weight: 900; letter-spacing: -0.5px; }
-    .score-num.safe       { color: #34d399; }
-    .score-num.suspicious { color: #fbbf24; }
-    .score-num.blocked    { color: #f87171; }
-    .score-track { height: 5px; background: rgba(255,255,255,0.06); }
-    .score-fill { height: 100%; transition: width 0.7s cubic-bezier(0.25,0.46,0.45,0.94); }
-    .fill-safe       { background: linear-gradient(90deg,#059669,#34d399); }
-    .fill-suspicious { background: linear-gradient(90deg,#d97706,#fbbf24); }
-    .fill-blocked    { background: linear-gradient(90deg,#b91c1c,#f87171); }
-    .result-bottom {
-      padding: 10px 14px;
-      border-top: 1px solid rgba(99,179,237,0.07);
-      background: rgba(255,255,255,0.02);
-    }
-    .url-text { color: #8ba0b8; font-size: 0.72rem; line-height: 1.4; word-break: break-all; margin-bottom: 4px; }
-    .time-text { color: #4a637c; font-size: 0.68rem; font-weight: 500; }
+    .badge-safe       { border: 1.5px solid rgba(16,185,129,0.45);  background: rgba(16,185,129,0.12);  color: #4ade80; }
+    .badge-suspicious { border: 1.5px solid rgba(245,158,11,0.45);  background: rgba(245,158,11,0.12);  color: #fbbf24; }
+    .badge-blocked    { border: 1.5px solid rgba(239,68,68,0.45);   background: rgba(239,68,68,0.12);   color: #f87171; }
 
-    /* ── Breakdown section ── */
-    .breakdown-section {
-      border: 1px solid rgba(99,179,237,0.1);
-      border-radius: 10px;
-      overflow: hidden;
-      background: rgba(4,12,26,0.7);
-    }
-    .breakdown-heading {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 9px 14px;
-      border-bottom: 1px solid rgba(99,179,237,0.08);
-      background: rgba(255,255,255,0.02);
-    }
-    .breakdown-heading span {
-      font-size: 0.67rem;
-      font-weight: 700;
-      color: #6b8aaa;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-    }
-    .breakdown-heading .hline {
-      flex: 1; height: 1px; background: rgba(99,179,237,0.08);
-    }
+    /* Score bar */
+    .bar-track { width: 100%; height: 6px; background: rgba(255,255,255,0.06); border-radius: 999px; overflow: hidden; }
+    .bar-fill  { height: 100%; border-radius: 999px; transition: width 0.8s cubic-bezier(0.25,0.46,0.45,0.94); }
+    .bar-safe       { background: linear-gradient(90deg, #059669, #34d399); }
+    .bar-suspicious { background: linear-gradient(90deg, #d97706, #fbbf24); }
+    .bar-blocked    { background: linear-gradient(90deg, #b91c1c, #f87171); }
 
-    .bd-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 9px 14px;
-      border-bottom: 1px solid rgba(99,179,237,0.06);
-      transition: background 0.15s;
+    /* Status message */
+    .status-msg {
+      text-align: center; font-size: 0.78rem; font-weight: 600; line-height: 1.45;
+      padding: 8px 10px; border-radius: 8px;
     }
-    .bd-row:last-child { border-bottom: none; }
-    .bd-row:hover { background: rgba(255,255,255,0.025); }
+    .msg-safe       { color: #34d399; background: rgba(52,211,153,0.07); }
+    .msg-suspicious { color: #fbbf24; background: rgba(251,191,36,0.07); }
+    .msg-blocked    { color: #f87171; background: rgba(248,113,113,0.07); }
 
-    .bd-icon {
-      width: 28px; height: 28px; flex-shrink: 0;
-      display: grid; place-items: center;
-      border-radius: 7px;
-      border: 1px solid rgba(99,179,237,0.1);
-      background: rgba(255,255,255,0.03);
-      font-size: 0.85rem;
-    }
-    .bd-text { flex: 1; min-width: 0; }
-    .bd-label { font-size: 0.78rem; font-weight: 700; color: #c8ddf0; margin-bottom: 2px; }
-    .bd-detail {
-      font-size: 0.68rem; color: #6b8aaa; line-height: 1.35;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-    .bd-chip {
-      flex-shrink: 0;
-      padding: 3px 8px; border-radius: 999px;
-      font-size: 0.68rem; font-weight: 800; white-space: nowrap;
-    }
-    .chip-safe    { color: #34d399; background: rgba(52,211,153,0.1);  border: 1px solid rgba(52,211,153,0.22); }
-    .chip-warn    { color: #fbbf24; background: rgba(251,191,36,0.1);  border: 1px solid rgba(251,191,36,0.22); }
-    .chip-danger  { color: #f87171; background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.22); }
+    /* URL + time */
+    .meta { width: 100%; }
+    .url-text  { font-size: 0.68rem; color: #6b8aaa; word-break: break-all; line-height: 1.4; text-align: center; }
+    .time-text { font-size: 0.63rem; color: #374e62; text-align: center; margin-top: 4px; }
 
     /* ── Open button ── */
     .open-btn {
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-      width: 100%; padding: 10px;
-      border-radius: 9px;
-      background: linear-gradient(135deg,#3b82f6,#06b6d4);
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+      padding: 11px; border-radius: 10px;
+      background: linear-gradient(135deg, #3b82f6, #06b6d4);
       color: #fff; font-size: 0.84rem; font-weight: 800;
       text-decoration: none; letter-spacing: 0.01em;
-      box-shadow: 0 4px 14px rgba(59,130,246,0.28);
+      box-shadow: 0 4px 16px rgba(59,130,246,0.28);
       transition: transform 0.15s, box-shadow 0.2s;
     }
-    .open-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(59,130,246,0.4); }
+    .open-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(59,130,246,0.4); }
+
+    /* ── System page ── */
+    .no-data { padding: 26px 12px; text-align: center; }
+    .no-data-icon  { font-size: 2rem; display: block; margin-bottom: 8px; }
+    .no-data-title { font-weight: 700; font-size: 0.88rem; color: #9bb5d0; margin-bottom: 5px; }
+    .no-data-sub   { color: #4a637c; font-size: 0.75rem; line-height: 1.5; }
+
+    /* ── Error ── */
+    .error-msg { padding: 12px 14px; border-radius: 10px; background: rgba(239,68,68,0.08);
+      border: 1px solid rgba(239,68,68,0.2); color: #f87171; font-size: 0.76rem; font-weight: 600; line-height: 1.45; }
 
     /* ── Settings ── */
-    .settings { padding-top: 10px; border-top: 1px solid rgba(99,179,237,0.1); }
-    .settings-label {
-      margin-bottom: 7px; color: #6b8aaa;
-      font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
-    }
-    .settings-row { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 7px; }
+    .settings { padding-top: 10px; border-top: 1px solid rgba(99,179,237,0.08); }
+    .settings-label { margin-bottom: 7px; color: #4a637c; font-size: 0.63rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
+    .settings-row { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 6px; }
     .settings input {
-      min-width: 0; border: 1.5px solid rgba(99,179,237,0.18);
-      border-radius: 7px; background: rgba(255,255,255,0.04);
-      color: #e8f1fc; font: inherit; font-size: 0.74rem; padding: 8px 10px;
+      min-width: 0; border: 1.5px solid rgba(99,179,237,0.15);
+      border-radius: 7px; background: rgba(255,255,255,0.03);
+      color: #e8f1fc; font: inherit; font-size: 0.72rem; padding: 7px 9px;
       outline: none; transition: border-color 0.2s;
     }
-    .settings input:focus { border-color: rgba(6,182,212,0.55); }
+    .settings input:focus { border-color: rgba(6,182,212,0.5); }
     .settings button {
-      border: 0; border-radius: 7px; background: rgba(99,179,237,0.15);
+      border: 0; border-radius: 7px; background: rgba(99,179,237,0.12);
       color: #dbeafe; cursor: pointer; font: inherit;
-      font-size: 0.74rem; font-weight: 800; padding: 8px 11px;
+      font-size: 0.72rem; font-weight: 800; padding: 7px 10px;
       transition: background 0.2s;
     }
-    .settings button:hover { background: rgba(99,179,237,0.25); }
-    .save-state { min-height: 15px; margin-top: 5px; color: #34d399; font-size: 0.68rem; font-weight: 600; }
+    .settings button:hover { background: rgba(99,179,237,0.22); }
+    .save-state { min-height: 14px; margin-top: 5px; color: #34d399; font-size: 0.65rem; font-weight: 600; }
     .save-state.error { color: #f87171; }
   </style>
 </head>
 <body>
   <div class="header">
     <span class="header-icon">PG</span>
-    <div class="header-info">
-      <div class="header-title">PhishGuard</div>
-      <div class="header-sub">Last scanned URL result</div>
-    </div>
-    <div class="status-dot" title="Extension active"></div>
+    <span class="header-title">PhishGuard</span>
+    <span class="dot"></span>
   </div>
 
   <div class="body">
     <div id="content">
-      <div class="no-data">
-        <span class="no-data-icon">🔍</span>
-        <div class="no-data-title">No URL scanned yet</div>
-        <div class="no-data-sub">Navigate to any website and PhishGuard will automatically analyze it.</div>
+      <div class="loading-wrap">
+        <div class="spinner"></div>
+        <div class="loading-label">Scanning…</div>
       </div>
     </div>
 
     <a id="open-link" class="open-btn" href="http://localhost:3000" target="_blank">
-      Open PhishGuard →
+      Open Full Report →
     </a>
 
     <div class="settings">
-      <div class="settings-label">⚙ Backend API URL</div>
+      <div class="settings-label">⚙ Backend URL</div>
       <div class="settings-row">
         <input id="api-url" type="url" placeholder="http://localhost:3000/api/analyze" />
-        <button id="save-api-url" type="button">Save</button>
+        <button id="save-api-url">Save</button>
       </div>
       <div id="save-state" class="save-state" aria-live="polite"></div>
     </div>
