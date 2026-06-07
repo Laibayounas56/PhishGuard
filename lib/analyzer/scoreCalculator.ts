@@ -29,7 +29,11 @@ export function calculateScore(
   const score = clamp(raw, 0, 100);
 
   let status: Status;
-  if (score >= 70) status = "Blocked";
+  // If blacklist indicates a high-risk result (e.g. Google Safe Browsing),
+  // treat the URL as `Blocked` regardless of the combined score.
+  if (blacklist.score >= 50) {
+    status = "Blocked";
+  } else if (score >= 70) status = "Blocked";
   else if (score >= 40) status = "Suspicious";
   else status = "Safe";
 

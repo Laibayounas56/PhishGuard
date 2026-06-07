@@ -33,7 +33,7 @@ export async function checkDomainAge(url: string): Promise<DomainAgeResult> {
   try {
     const res = await fetch(
       `https://www.whoisxmlapi.com/whoisserver/WhoisService?apiKey=${apiKey}&domainName=${domain}&outputFormat=JSON`,
-      { signal: AbortSignal.timeout(1800) }
+      { signal: AbortSignal.timeout(10000) }
     );
 
     if (!res.ok) {
