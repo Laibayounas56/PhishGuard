@@ -35,6 +35,8 @@ async function rememberResult(url, result) {
       score: result.score,
       status: result.status,
       timestamp: Date.now(),
+      virusTotal: result.virusTotal ?? null,
+      breakdown: result.breakdown ?? null,
     },
   });
 }

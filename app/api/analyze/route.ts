@@ -34,38 +34,98 @@ function validateUrl(url: string): string | null {
   }
 }
 
-// ✅ POST ke bahar nikala
 async function checkVirusTotal(url: string) {
   const apiKey = process.env.VIRUSTOTAL_API_KEY;
   if (!apiKey) return { error: "API key not configured", malicious: 0, total: 0 };
 
   try {
+    // Build the base64url URL ID (VirusTotal v3 lookup key)
+    const urlId = Buffer.from(url)
+      .toString("base64")
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=/g, "");
+
+    // ── Step 1: Try GET cached report first (no quota impact, instant) ──
+    const cachedRes = await fetch(
+      `https://www.virustotal.com/api/v3/urls/${urlId}`,
+      {
+        headers: { "x-apikey": apiKey },
+        signal: AbortSignal.timeout(8000),
+      }
+    );
+
+    if (cachedRes.ok) {
+      const cachedData = await cachedRes.json();
+      const stats = cachedData?.data?.attributes?.last_analysis_stats ?? {};
+      const total = Object.values(stats).reduce((a: number, b) => a + (b as number), 0);
+      if (total > 0) {
+        return {
+          malicious:  stats.malicious  ?? 0,
+          suspicious: stats.suspicious ?? 0,
+          harmless:   stats.harmless   ?? 0,
+          total,
+        };
+      }
+    }
+
+    if (cachedRes.status === 429) {
+      return { error: "Rate limit reached — try again in a minute", malicious: 0, total: 0 };
+    }
+
+    // ── Step 2: Not cached — submit URL for a fresh scan ──
+    const formBody = new URLSearchParams();
+    formBody.append("url", url);
+
     const submitRes = await fetch("https://www.virustotal.com/api/v3/urls", {
       method: "POST",
       headers: {
         "x-apikey": apiKey,
         "Content-Type": "application/x-www-form-urlencoded",
       },
-      body: `url=${encodeURIComponent(url)}`,
+      body: formBody.toString(),
+      signal: AbortSignal.timeout(10000),
     });
+
+    if (submitRes.status === 429) {
+      return { error: "Rate limit reached — try again in a minute", malicious: 0, total: 0 };
+    }
+
+    if (!submitRes.ok) {
+      // Read actual error message from VT response body
+      try {
+        const errData = await submitRes.json();
+        const msg = errData?.error?.message ?? errData?.error?.code ?? `HTTP ${submitRes.status}`;
+        return { error: `VT: ${msg}`, malicious: 0, total: 0 };
+      } catch {
+        return { error: `VT API error (${submitRes.status})`, malicious: 0, total: 0 };
+      }
+    }
+
     const submitData = await submitRes.json();
     const analysisId = submitData?.data?.id;
-    if (!analysisId) return { error: "Submission failed", malicious: 0, total: 0 };
+    if (!analysisId) {
+      return { error: "Scan submission failed", malicious: 0, total: 0 };
+    }
 
-    await new Promise((r) => setTimeout(r, 3000));
+    // Wait for engines to finish, then poll
+    await new Promise((r) => setTimeout(r, 4000));
 
     const resultRes = await fetch(
       `https://www.virustotal.com/api/v3/analyses/${analysisId}`,
-      { headers: { "x-apikey": apiKey } }
+      {
+        headers: { "x-apikey": apiKey },
+        signal: AbortSignal.timeout(10000),
+      }
     );
     const resultData = await resultRes.json();
     const stats = resultData?.data?.attributes?.stats ?? {};
     const total = Object.values(stats).reduce((a: number, b) => a + (b as number), 0);
 
     return {
-      malicious: stats.malicious ?? 0,
+      malicious:  stats.malicious  ?? 0,
       suspicious: stats.suspicious ?? 0,
-      harmless: stats.harmless ?? 0,
+      harmless:   stats.harmless   ?? 0,
       total,
     };
   } catch {
